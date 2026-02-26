@@ -6,10 +6,10 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding-top: 50px; }
-        .status { padding: 10px; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
-        .online { background: #28a745; }
+        .status { padding: 10px 20px; border-radius: 5px; display: inline-block; margin-bottom: 20px; font-weight: bold; }
+        .online { background: #28a745; color: white; }
         .waiting { background: #ffc107; color: #000; }
-        #data-display { font-size: 1.2rem; color: #00ff00; margin-top: 20px; }
+        #data-display { font-size: 1.5rem; color: #00ff00; margin-top: 20px; line-height: 2; }
     </style>
 </head>
 <body>
@@ -18,14 +18,15 @@
     <div id="data-display">بانتظار وصول أول سعر...</div>
 
     <script>
-        // 1. ضع مفتاحك السري هنا
+        // 1. ضع مفتاحك السري هنا بدقة بين علامتي التنصيص
         const MY_KEY = "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"; 
 
-        // 2. إعداد الربط المباشر
+        // 2. إعداد الربط المباشر (تعديل ليتوافق مع تعليمات PHP)
         const socket = io("https://sse.datshop.com.tr", {
             auth: { socket_key: MY_KEY },
             query: { socket_key: MY_KEY },
-            transports: ['websocket', 'polling']
+            transports: ['websocket', 'polling'],
+            forceNew: true
         });
 
         const badge = document.getElementById('statusBadge');
@@ -34,23 +35,28 @@
         socket.on("connect", () => {
             badge.innerText = "✅ متصل الآن - السيرفر جاهز";
             badge.className = "status online";
+            console.log("Connected successfully!");
         });
 
-        // 3. الاستماع لحدث 'price_changed' كما ورد في تعليمات الـ PHP
+        // 3. الاستماع لحدث 'price_changed' المؤكد من تعليمات PHP
         socket.on("price_changed", (data) => {
-            console.log("وصلت بيانات:", data);
+            console.log("وصلت أسعار حية:", data);
             badge.innerText = "⚡ بث مباشر نشط";
             
             if (data && data.length > 0) {
-                // عرض عينة من أول سعر واصل للتأكد
-                const firstItem = data[0];
-                display.innerHTML = `تم استقبال تحديث لـ: ${firstItem.symbol || 'الذهب'}<br>
-                                    شراء: ${firstItem.bid} | مبيع: ${firstItem.ask}`;
+                // عرض عينة للتأكد من وصول البيانات
+                const item = data[0]; 
+                display.innerHTML = `
+                    <div style="border: 1px solid #333; padding: 20px; display: inline-block; border-radius: 10px;">
+                        <span style="color: #ffc107;">${item.symbol || 'الذهب'}</span><br>
+                        شراء: ${item.bid || item.alis} | مبيع: ${item.ask || item.satis}
+                    </div>
+                `;
             }
         });
 
         socket.on("connect_error", (err) => {
-            badge.innerText = "❌ فشل: " + err.message;
+            badge.innerText = "❌ خطأ في الاتصال: " + err.message;
             badge.className = "status waiting";
         });
     </script>
