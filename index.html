@@ -18,37 +18,37 @@
     <div id="data-display">بانتظار وصول أول سعر...</div>
 
     <script>
-        // 1. ضع مفتاحك السري هنا بدقة بين علامتي التنصيص
+        // 1. تأكد من وضع المفتاح بدقة هنا
         const MY_KEY = "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"; 
 
-        // 2. إعداد الربط المباشر (تعديل ليتوافق مع تعليمات PHP)
+        // 2. الربط المزدوج (Auth + Query) لضمان القبول
         const socket = io("https://sse.datshop.com.tr", {
             auth: { socket_key: MY_KEY },
             query: { socket_key: MY_KEY },
             transports: ['websocket', 'polling'],
-            forceNew: true
+            forceNew: true,
+            reconnection: true
         });
 
         const badge = document.getElementById('statusBadge');
         const display = document.getElementById('data-display');
 
         socket.on("connect", () => {
-            badge.innerText = "✅ متصل الآن - السيرفر جاهز";
+            badge.innerText = "✅ تم الاتصال بنجاح";
             badge.className = "status online";
-            console.log("Connected successfully!");
+            console.log("Connected!");
         });
 
-        // 3. الاستماع لحدث 'price_changed' المؤكد من تعليمات PHP
+        // 3. استخدام اسم الحدث الصحيح 'price_changed'
         socket.on("price_changed", (data) => {
-            console.log("وصلت أسعار حية:", data);
+            console.log("بيانات حية:", data);
             badge.innerText = "⚡ بث مباشر نشط";
             
             if (data && data.length > 0) {
-                // عرض عينة للتأكد من وصول البيانات
                 const item = data[0]; 
                 display.innerHTML = `
                     <div style="border: 1px solid #333; padding: 20px; display: inline-block; border-radius: 10px;">
-                        <span style="color: #ffc107;">${item.symbol || 'الذهب'}</span><br>
+                        <span style="color: #ffc107; font-size: 2rem;">${item.symbol || 'الذهب'}</span><br>
                         شراء: ${item.bid || item.alis} | مبيع: ${item.ask || item.satis}
                     </div>
                 `;
@@ -56,7 +56,7 @@
         });
 
         socket.on("connect_error", (err) => {
-            badge.innerText = "❌ خطأ في الاتصال: " + err.message;
+            badge.innerText = "❌ خطأ: " + err.message;
             badge.className = "status waiting";
         });
     </script>
