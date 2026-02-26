@@ -1,14 +1,29 @@
-// Socket.IO bağlantısı örneği
-const socket = io('https://sse.datshop.com.tr', {
-    auth: { socket_key: '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' },
-    query: { socket_key: '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' },
-    transports: ['polling', 'websocket']
-});
+// 1. ضع المفتاح السري هنا بدقة
+        const MY_SOCKET_KEY = "'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' "; 
 
-socket.on('connect', () => {
-    console.log('✅ Bağlandı');
-});
+        const statusText = document.getElementById('status');
+        const debugDiv = document.getElementById('debug');
 
-socket.on('price_changed', (data) => {
-    console.log('📊 Fiyatlar:', data);
-});
+        // الربط بناءً على التعليمات الجديدة (Auth + Query)
+        const socket = io("https://sse.datshop.com.tr", {
+            auth: { socket_key: MY_SOCKET_KEY },
+            query: { socket_key: MY_SOCKET_KEY }, // أضفنا هذا السطر بناءً على كود PHP
+            transports: ["websocket", "polling"]
+        });
+
+        socket.on("connect", () => {
+            statusText.innerText = "✅ متصل الآن بالسيرفر التركي!";
+            statusText.style.color = "green";
+        });
+
+        // تغيير اسم الحدث من update إلى changed كما في تعليماتهم
+        socket.on("price_changed", (data) => {
+            statusText.innerText = "📊 وصلت الأسعار الحية!";
+            debugDiv.innerHTML = "<pre>" + JSON.stringify(data[0], null, 2) + "</pre>"; 
+            console.log("وصلت بيانات:", data);
+        });
+
+        socket.on("connect_error", (err) => {
+            statusText.innerText = "❌ خطأ: " + err.message;
+            statusText.style.color = "red";
+        });
