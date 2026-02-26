@@ -1,131 +1,43 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>أسعار الذهب والعملات - حريتاني</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>اختبار الاتصال</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-    <style>
-        :root {
-            --bg: #ffffff;
-            --card: #f9f9f9;
-            --text: #111827;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --gold-gradient: linear-gradient(135deg, #d4af37 0%, #f9e29c 50%, #b8860b 100%);
-            --buy-color: #065f46;
-            --sell-color: #991b1b;
-        }
-
-        body { margin: 0; background: var(--bg); font-family: 'Sofia Sans', system-ui, sans-serif; color: var(--text); }
-        .wrap { padding: 20px; max-width: 1200px; margin: auto; }
-        
-        .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--gold-gradient); padding-bottom: 10px; }
-        .title { font-weight: 800; font-size: 22px; color: #b8860b; }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
-        
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); border-color: #d4af37; }
-        
-        .name { font-weight: 800; font-size: 16px; margin-bottom: 15px; border-right: 4px solid #d4af37; padding-right: 10px; }
-        
-        .prices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .box { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
-        
-        .lbl { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px; }
-        .val { font-size: 20px; font-weight: 800; direction: ltr; }
-        
-        .buy { color: var(--buy-color); }
-        .sell { color: var(--sell-color); }
-        .unit { font-size: 11px; margin-right: 4px; color: var(--muted); }
-
-        .status { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 20px; }
-        .status.online { background: #d1fae5; color: #065f46; }
-        .status.offline { background: #fee2e2; color: #991b1b; }
-    </style>
 </head>
 <body>
+    <h1 id="status" style="color: orange;">جاري محاولة الاتصال بالسيرفر...</h1>
+    <div id="debug" style="background: #eee; padding: 10px; font-family: monospace;"></div>
 
-<div class="wrap">
-    <div class="top">
-        <div class="title">مصوغات حريتاني - الأسعار اللحظية</div>
-        <div id="connStatus" class="status offline">جاري الاتصال...</div>
-    </div>
-    <div class="grid" id="grid"></div>
-</div>
+    <script>
+        // 1. ضع المفتاح السري هنا بدقة
+        const MY_SOCKET_KEY = "ضَع_مفتاحك_هنا"; 
 
-<script>
-    // 1. ضَع مفتاح الربط الخاص بك هنا (بين علامتي التنصيص)
-    const SOCKET_KEY = "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"; 
+        const statusText = document.getElementById('status');
+        const debugDiv = document.getElementById('debug');
 
-    const DATSHOP_URL = "https://sse.datshop.com.tr";
-    const grid = document.getElementById('grid');
-    const statusBadge = document.getElementById('connStatus');
-
-    // الإعدادات (نفس الترتيب والأسماء التي كانت لديك)
-    const ORDER_IDS = ["GOLD_21K", "GOLD_24K", "USDTRY", "EURTRY", "USD_KG", "EUR_KG", "SILVER_TRY", "SILVER_USD"];
-    const TITLE_MAP = {
-        "GOLD_21K": "ذهب عيار 21 (ليرة تركية)",
-        "GOLD_24K": "ذهب عيار 24 (ليرة تركية)",
-        "USDTRY": "الدولار مقابل الليرة",
-        "EURTRY": "اليورو مقابل الليرة",
-        "USD_KG": "كيلو الذهب بالدولار",
-        "EUR_KG": "كيلو الذهب باليورو"
-    };
-
-    const socket = io(DATSHOP_URL, {
-        path: "/socket.io/",
-        auth: { socket_key: SOCKET_KEY },
-        transports: ["websocket"]
-    });
-
-    socket.on("connect", () => {
-        statusBadge.textContent = "متصل مباشر";
-        statusBadge.className = "status online";
-    });
-
-    socket.on("price_update", (data) => {
-        renderPrices(data);
-    });
-
-    function renderPrices(data) {
-        // تحويل البيانات لقاموس ليسهل الوصول إليها
-        const pricesMap = {};
-        data.forEach(item => {
-            pricesMap[item.symbol || item.code] = item;
+        // إعدادات الربط المباشر مع Datshop
+        const socket = io("https://sse.datshop.com.tr", {
+            auth: { socket_key: MY_SOCKET_KEY },
+            transports: ["websocket"]
         });
 
-        grid.innerHTML = "";
-        ORDER_IDS.forEach(id => {
-            const item = pricesMap[id];
-            if (!item) return;
-
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <div class="name">${TITLE_MAP[id] || id}</div>
-                <div class="prices">
-                    <div class="box">
-                        <div class="lbl">شراء</div>
-                        <div class="val buy">${parseFloat(item.bid || item.alis || 0).toLocaleString('tr-TR')} <span class="unit">TL</span></div>
-                    </div>
-                    <div class="box">
-                        <div class="lbl">مبيع</div>
-                        <div class="val sell">${parseFloat(item.ask || item.satis || 0).toLocaleString('tr-TR')} <span class="unit">TL</span></div>
-                    </div>
-                </div>
-            `;
-            grid.appendChild(card);
+        socket.on("connect", () => {
+            statusText.innerText = "✅ نجح الاتصال! السيرفر قبل المفتاح.";
+            statusText.style.color = "green";
+            debugDiv.innerHTML += "<p>تم فتح القناة بنجاح.</p>";
         });
-    }
 
-    socket.on("disconnect", () => {
-        statusBadge.textContent = "غير متصل";
-        statusBadge.className = "status offline";
-    });
-</script>
+        socket.on("price_update", (data) => {
+            debugDiv.innerHTML = "<p>وصلت بيانات الآن! عدد العناصر: " + data.length + "</p>";
+            console.log(data);
+        });
+
+        socket.on("connect_error", (err) => {
+            statusText.innerText = "❌ فشل الاتصال: " + err.message;
+            statusText.style.color = "red";
+            debugDiv.innerHTML += "<p>خطأ: تأكد من صحة المفتاح أو صلاحية الرابط.</p>";
+        });
+    </script>
 </body>
 </html>
