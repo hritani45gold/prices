@@ -2,146 +2,56 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>اختبار اتصال Datshop</title>
+    <title>بث أسعار حريتاني</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding-top: 50px; }
+        .status { padding: 10px; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        .online { background: #28a745; }
+        .waiting { background: #ffc107; color: #000; }
+        #data-display { font-size: 1.2rem; color: #00ff00; margin-top: 20px; }
+    </style>
 </head>
 <body>
-    <h1 id="status" style="color: orange;">جاري محاولة الاتصال (إعدادات PHP)...</h1>
-    <div id="debug" style="background: #f0f0f0; padding: 20px; font-family: monospace; border-radius: 10px;">
-        بانتظار البيانات من السيرفر...
-    </div>
+
+    <div id="statusBadge" class="status waiting">جاري الاتصال بالسيرفر التركي...</div>
+    <div id="data-display">بانتظار وصول أول سعر...</div>
 
     <script>
-        // 1. ضع مفتاحك هنا بدقة
-        const SOCKET_KEY = "<!DOCTYPE html>
-<html lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <title>اختبار اتصال Datshop</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-</head>
-<body>
-    <h1 id="status" style="color: orange;">جاري محاولة الاتصال (إعدادات PHP)...</h1>
-    <div id="debug" style="background: #f0f0f0; padding: 20px; font-family: monospace; border-radius: 10px;">
-        بانتظار البيانات من السيرفر...
-    </div>
+        // 1. ضع مفتاحك السري هنا
+        const MY_KEY = "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"; 
 
-    <script>
-        // 1. ضع مفتاحك هنا بدقة
-        const SOCKET_KEY = "<!DOCTYPE html>
-<html lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <title>اختبار اتصال Datshop</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-</head>
-<body>
-    <h1 id="status" style="color: orange;">جاري محاولة الاتصال (إعدادات PHP)...</h1>
-    <div id="debug" style="background: #f0f0f0; padding: 20px; font-family: monospace; border-radius: 10px;">
-        بانتظار البيانات من السيرفر...
-    </div>
-
-    <script>
-        // 1. ضع مفتاحك هنا بدقة
-        const SOCKET_KEY = "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"; 
-
-        const statusText = document.getElementById('status');
-        const debugDiv = document.getElementById('debug');
-
-        // الربط بناءً على تعليمات Datshop الرسمية
+        // 2. إعداد الربط المباشر
         const socket = io("https://sse.datshop.com.tr", {
-            auth: { socket_key: SOCKET_KEY }, // كما هو مطلوب في PHP
-            query: { socket_key: SOCKET_KEY }, // إرسال المفتاح في الرابط أيضاً
-            transports: ['polling', 'websocket'], // دعم الطريقتين لضمان الاتصال
-            forceNew: true
+            auth: { socket_key: MY_KEY },
+            query: { socket_key: MY_KEY },
+            transports: ['websocket', 'polling']
         });
+
+        const badge = document.getElementById('statusBadge');
+        const display = document.getElementById('data-display');
 
         socket.on("connect", () => {
-            statusText.innerText = "✅ تم الاتصال بنجاح (سيرفر Datshop متصل)";
-            statusText.style.color = "green";
-            console.log("Connected with ID:", socket.id);
+            badge.innerText = "✅ متصل الآن - السيرفر جاهز";
+            badge.className = "status online";
         });
 
-        // تغيير اسم الحدث ليكون 'price_changed' بناءً على تعليمات الـ PHP
+        // 3. الاستماع لحدث 'price_changed' كما ورد في تعليمات الـ PHP
         socket.on("price_changed", (data) => {
-            statusText.innerText = "📊 الأسعار وصلت حية الآن!";
-            // عرض أول عنصر من البيانات للتأكد
-            debugDiv.innerHTML = "<h3>بيانات عينة:</h3><pre>" + JSON.stringify(data[0], null, 2) + "</pre>";
-            console.log("Data received:", data);
+            console.log("وصلت بيانات:", data);
+            badge.innerText = "⚡ بث مباشر نشط";
+            
+            if (data && data.length > 0) {
+                // عرض عينة من أول سعر واصل للتأكد
+                const firstItem = data[0];
+                display.innerHTML = `تم استقبال تحديث لـ: ${firstItem.symbol || 'الذهب'}<br>
+                                    شراء: ${firstItem.bid} | مبيع: ${firstItem.ask}`;
+            }
         });
 
         socket.on("connect_error", (err) => {
-            statusText.innerText = "❌ فشل الاتصال: " + err.message;
-            statusText.style.color = "red";
-            debugDiv.innerText = "تأكد أن المفتاح صحيح وأن السيرفر يسمح بالاتصال من GitHub.";
-        });
-    </script>
-</body>
-</html>"; 
-
-        const statusText = document.getElementById('status');
-        const debugDiv = document.getElementById('debug');
-
-        // الربط بناءً على تعليمات Datshop الرسمية
-        const socket = io("https://sse.datshop.com.tr", {
-            auth: { socket_key: SOCKET_KEY }, // كما هو مطلوب في PHP
-            query: { socket_key: SOCKET_KEY }, // إرسال المفتاح في الرابط أيضاً
-            transports: ['polling', 'websocket'], // دعم الطريقتين لضمان الاتصال
-            forceNew: true
-        });
-
-        socket.on("connect", () => {
-            statusText.innerText = "✅ تم الاتصال بنجاح (سيرفر Datshop متصل)";
-            statusText.style.color = "green";
-            console.log("Connected with ID:", socket.id);
-        });
-
-        // تغيير اسم الحدث ليكون 'price_changed' بناءً على تعليمات الـ PHP
-        socket.on("price_changed", (data) => {
-            statusText.innerText = "📊 الأسعار وصلت حية الآن!";
-            // عرض أول عنصر من البيانات للتأكد
-            debugDiv.innerHTML = "<h3>بيانات عينة:</h3><pre>" + JSON.stringify(data[0], null, 2) + "</pre>";
-            console.log("Data received:", data);
-        });
-
-        socket.on("connect_error", (err) => {
-            statusText.innerText = "❌ فشل الاتصال: " + err.message;
-            statusText.style.color = "red";
-            debugDiv.innerText = "تأكد أن المفتاح صحيح وأن السيرفر يسمح بالاتصال من GitHub.";
-        });
-    </script>
-</body>
-</html>"; 
-
-        const statusText = document.getElementById('status');
-        const debugDiv = document.getElementById('debug');
-
-        // الربط بناءً على تعليمات Datshop الرسمية
-        const socket = io("https://sse.datshop.com.tr", {
-            auth: { socket_key: SOCKET_KEY }, // كما هو مطلوب في PHP
-            query: { socket_key: SOCKET_KEY }, // إرسال المفتاح في الرابط أيضاً
-            transports: ['polling', 'websocket'], // دعم الطريقتين لضمان الاتصال
-            forceNew: true
-        });
-
-        socket.on("connect", () => {
-            statusText.innerText = "✅ تم الاتصال بنجاح (سيرفر Datshop متصل)";
-            statusText.style.color = "green";
-            console.log("Connected with ID:", socket.id);
-        });
-
-        // تغيير اسم الحدث ليكون 'price_changed' بناءً على تعليمات الـ PHP
-        socket.on("price_changed", (data) => {
-            statusText.innerText = "📊 الأسعار وصلت حية الآن!";
-            // عرض أول عنصر من البيانات للتأكد
-            debugDiv.innerHTML = "<h3>بيانات عينة:</h3><pre>" + JSON.stringify(data[0], null, 2) + "</pre>";
-            console.log("Data received:", data);
-        });
-
-        socket.on("connect_error", (err) => {
-            statusText.innerText = "❌ فشل الاتصال: " + err.message;
-            statusText.style.color = "red";
-            debugDiv.innerText = "تأكد أن المفتاح صحيح وأن السيرفر يسمح بالاتصال من GitHub.";
+            badge.innerText = "❌ فشل: " + err.message;
+            badge.className = "status waiting";
         });
     </script>
 </body>
