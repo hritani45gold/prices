@@ -1,44 +1,14 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <title>اختبار الاتصال</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-</head>
-<body>
-    <h1 id="status" style="color: orange;">جاري محاولة الاتصال بالسيرفر...</h1>
-    <div id="debug" style="background: #eee; padding: 10px; font-family: monospace;"></div>
+// Socket.IO bağlantısı örneği
+const socket = io('https://sse.datshop.com.tr', {
+    auth: { socket_key: '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' },
+    query: { socket_key: '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' },
+    transports: ['polling', 'websocket']
+});
 
-    <script>
-        // 1. ضع المفتاح السري هنا بدقة
-        const MY_SOCKET_KEY = "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"; 
+socket.on('connect', () => {
+    console.log('✅ Bağlandı');
+});
 
-        const statusText = document.getElementById('status');
-        const debugDiv = document.getElementById('debug');
-
-        // إعدادات الربط المباشر مع Datshop
-        const socket = io("https://sse.datshop.com.tr", {
-            auth: { socket_key: MY_SOCKET_KEY },
-            transports: ["websocket"]
-        });
-
-        socket.on("connect", () => {
-            statusText.innerText = "✅ نجح الاتصال! السيرفر قبل المفتاح.";
-            statusText.style.color = "green";
-            debugDiv.innerHTML += "<p>تم فتح القناة بنجاح.</p>";
-        });
-
-        socket.on("price_update", (data) => {
-            debugDiv.innerHTML = "<p>وصلت بيانات الآن! عدد العناصر: " + data.length + "</p>";
-            console.log(data);
-        });
-
-        socket.on("connect_error", (err) => {
-            statusText.innerText = "❌ فشل الاتصال: " + err.message;
-            statusText.style.color = "red";
-            debugDiv.innerHTML += "<p>خطأ: تأكد من صحة المفتاح أو صلاحية الرابط.</p>";
-        });
-    </script>
-</body>
-</html>
-
+socket.on('price_changed', (data) => {
+    console.log('📊 Fiyatlar:', data);
+});
